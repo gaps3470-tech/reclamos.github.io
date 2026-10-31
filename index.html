@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONO - Portal de Quejas y Sugerencias</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Font: Fredoka for rounded logo vibe & Inter for text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ono: {
+                            50: '#fcf3fd',
+                            100: '#f8e6fa',
+                            200: '#f2ccf6',
+                            500: '#9b2ba8',
+                            600: '#7e1e8b',
+                            700: '#5c1d63', // ONO Purple
+                            800: '#4a1750',
+                            900: '#38103d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        brand: ['Fredoka', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .ono-logo {
+            font-family: 'Fredoka', cursive, sans-serif;
+            letter-spacing: -1px;
+        }
+        /* Custom scrollbar for admin list */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5a4cb;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5c1d63;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Principal -->
+    <header class="bg-ono-700 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <!-- Logo ONO -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('user')">
+                <div class="bg-white text-ono-700 ono-logo text-3xl font-bold px-4 py-1 rounded-2xl shadow-inner transform hover:scale-105 transition-transform">
+                    ono
+                </div>
+                <div class="hidden sm:block border-l border-ono-600 pl-3">
+                    <p class="text-xs uppercase tracking-wider text-purple-200 font-semibold">Atención al Cliente</p>
+                    <p class="text-sm font-medium">Buzón de Opinión</p>
+                </div>
+            </div>
+
+            <!-- Selector de Vista (Usuario vs Admin) -->
+            <div class="flex items-center bg-ono-800/60 p-1 rounded-xl border border-ono-600/50">
+                <button id="nav-btn-user" onclick="switchView('user')" 
+                    class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 bg-white text-ono-700 shadow-sm">
+                    <i class="fa-solid fa-paper-plane">
+</i>
+                    <span>Enviar Mensaje</span>
+                </button>
+                <button id="nav-btn-admin" onclick="switchView('admin')" 
+                    class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 text-purple-200 hover:text-white">
+                    <i class="fa-solid fa-user-shield">
+</i>
+                    <span>Administración</span>
+                    <span id="badge-total-count" class="ml-1 bg-purple-400 text-ono-900 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ==================== VISTA USUARIO ==================== -->
+        <section id="view-user" class="transition-opacity duration-300">
+            <div class="max-w-2xl mx-auto">
+                <!-- Banner de bienvenida -->
+                <div class="bg-gradient-to-r from-ono-700 to-ono-600 rounded-3xl p-6 md:p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-white">
+                        <i class="fa-solid fa-comments text-9xl">
+</i>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-2">Tu opinión impulsa a ONO</h1>
+                    <p class="text-purple-100 text-sm md:text-base leading-relaxed">
+                        Queremos escucharte. Envía tus quejas o sugerencias de forma rápida y sencilla sin necesidad de registrarte.
+                    </p>
+                </div>
+
+                <!-- Formulario -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 md:p-8">
+                    <form id="feedback-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                        
+                        <!-- Tipo de mensaje (Radio Cards) -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-3">
+                                ¿Qué deseas enviar? <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="relative flex flex-col items-center justify-center p-4 border-2 rounded-2xl cursor-pointer hover:border-ono-500 transition-all group bg-slate-50 hover:bg-purple-50/50 has-[:checked]:border-ono-700 has-[:checked]:bg-purple-50 has-[:checked]:shadow-sm">
+                                    <input type="radio" name="entry_type" value="queja" class="sr-only" checked onchange="updateFormUI()">
+                                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-circle-exclamation text-xl">
+</i>
+                                    </div>
+                                    <span class="font-bold text-slate-800 text-sm">Queja / Reclamo</span>
+                                    <span class="text-xs text-slate-500 text-center mt-1">Reportar un problema o disconformidad</span>
+                                </label>
+
+                                <label class="relative flex flex-col items-center justify-center p-4 border-2 rounded-2xl cursor-pointer hover:border-ono-500 transition-all group bg-slate-50 hover:bg-purple-50/50 has-[:checked]:border-ono-700 has-[:checked]:bg-purple-50 has-[:checked]:shadow-sm">
+                                    <input type="radio" name="entry_type" value="sugerencia" class="sr-only" onchange="updateFormUI()">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                        <i class="fa-solid fa-lightbulb text-xl">
+</i>
+                                    </div>
+                                    <span class="font-bold text-slate-800 text-sm">Sugerencia</span>
+                                    <span class="text-xs text-slate-500 text-center mt-1">Proponer una mejora o idea</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Asunto -->
+                        <div>
+                            <label for="subject" class="block text-sm font-semibold text-slate-700 mb-1">
+                                Asunto o Título <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="subject" required placeholder="Ej: Problema con la señal / Idea para la app" 
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-ono-600 focus:border-transparent transition-all">
+                        </div>
+
+                        <!-- Detalles -->
+                        <div>
+                            <label for="detail" class="block text-sm font-semibold text-slate-700 mb-1">
+                                Detalle de tu mensaje <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="detail" rows="5" required placeholder="Describe detenidamente la situación..." 
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-ono-600 focus:border-transparent transition-all resize-y"></textarea>
+                        </div>
+
+                        <!-- Datos de Contacto (Opcional) -->
+                        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Datos de Contacto (Opcional)</span>
+                                <span class="text-xs text-slate-400">Puedes enviar de forma anónima</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="user_name" class="block text-xs font-medium text-slate-600 mb-1">Nombre</label>
+                                    <input type="text" id="user_name" placeholder="Tu nombre (opcional)" 
+                                        class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ono-600">
+                                </div>
+                                <div>
+                                    <label for="user_contact" class="block text-xs font-medium text-slate-600 mb-1">Correo o Teléfono</label>
+                                    <input type="text" id="user_contact" placeholder="Ej: usuario@email.com" 
+                                        class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-ono-600">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botón Enviar -->
+                        <button type="submit" id="submit-btn" 
+                            class="w-full bg-ono-700 hover:bg-ono-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-paper-plane">
+</i>
+                            <span>Enviar a ONO</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VISTA ADMINISTRADOR ==================== -->
+        <section id="view-admin" class="hidden transition-opacity duration-300 space-y-6">
+            
+            <!-- Encabezado Admin & Estadísticas -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Panel de Administración ONO</h2>
+                    <p class="text-slate-500 text-sm">Gestiona y responde las opiniones recibidas de los usuarios.</p>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <button onclick="seedDemoData()" title="Cargar datos de ejemplo" 
+                        class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-xl transition">
+                        <i class="fa-solid fa-database mr-1">
+</i> Cargar Demo
+                    </button>
+                    <button onclick="clearAllData()" title="Limpiar todas las entradas" 
+                        class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-xl transition">
+                        <i class="fa-solid fa-trash mr-1">
+</i> Limpiar Todo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tarjetas de métricas -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Total -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase">Total Recibidos</p>
+                        <p id="stat-total" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                        <i class="fa-solid fa-inbox text-xl">
+</i>
+                    </div>
+                </div>
+
+                <!-- Quejas -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-red-300 transition" onclick="setAdminFilterType('queja')">
+                    <div>
+                        <p class="text-xs font-bold text-red-600 uppercase">Quejas / Reclamos</p>
+                        <p id="stat-quejas" class="text-3xl font-extrabold text-red-700 mt-1">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center">
+                        <i class="fa-solid fa-triangle-exclamation text-xl">
+</i>
+                    </div>
+                </div>
+
+                <!-- Sugerencias -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-emerald-300 transition" onclick="setAdminFilterType('sugerencia')">
+                    <div>
+                        <p class="text-xs font-bold text-emerald-600 uppercase">Sugerencias</p>
+                        <p id="stat-sugerencias" class="text-3xl font-extrabold text-emerald-700 mt-1">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <i class="fa-solid fa-lightbulb text-xl">
+</i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros y Búsqueda -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
+                
+                <!-- Pestañas de tipo (Todos / Quejas / Sugerencias) -->
+                <div class="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto">
+                    <button id="tab-type-all" onclick="setAdminFilterType('all')" 
+                        class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-slate-800 shadow-sm">
+                        Todos
+                    </button>
+                    <button id="tab-type-queja" onclick="setAdminFilterType('queja')" 
+                        class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-slate-600 hover:text-red-600">
+                        <i class="fa-solid fa-circle-exclamation text-red-500 mr-1">
+</i> Quejas
+                    </button>
+                    <button id="tab-type-sugerencia" onclick="setAdminFilterType('sugerencia')" 
+                        class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-slate-600 hover:text-emerald-600">
+                        <i class="fa-solid fa-lightbulb text-emerald-500 mr-1">
+</i> Sugerencias
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <!-- Filtro por Estado -->
+                    <select id="admin-status-filter" onchange="renderAdminList()" class="px-3 py-2 bg-slate-100 border-none rounded-xl text-xs md:text-sm font-medium focus:ring-2 focus:ring-ono-600">
+                        <option value="all">Todos los estados</option>
+                        <option value="pendiente">Pendientes</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="resuelto">Resueltos</option>
+                    </select>
+
+                    <!-- Buscador -->
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm">
+</i>
+                        <input type="text" id="admin-search" oninput="renderAdminList()" placeholder="Buscar por asunto o detalle..." 
+                            class="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-ono-600">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Mensajes -->
+            <div id="admin-list-container" class="space-y-4">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center space-x-2">
+                <span class="ono-logo text-ono-700 text-xl font-bold">ono</span>
+                <span>© Portal Oficial de Atención</span>
+            </div>
+            <p>Diseñado para recepción directa de reclamos y mejoras.</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700">
+        <div id="toast-icon" class="text-emerald-400 text-lg">
+            <i class="fa-solid fa-circle-check">
+</i>
+        </div>
+        <div>
+            <h4 id="toast-title" class="text-sm font-bold">Éxito</h4>
+            <p id="toast-message" class="text-xs text-slate-300">Tu mensaje ha sido enviado correctamente.</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Storage Key
+        const STORAGE_KEY = 'ono_feedback_entries';
+
+        // App State
+        let entries = [];
+        let currentAdminFilterType = 'all';
+
+        // Load data on startup
+        window.onload = function() {
+            loadEntries();
+            updateFormUI();
+            renderAdminList();
+            updateStats();
+        };
+
+        // --- DATA MANAGEMENT ---
+        function loadEntries() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    entries = JSON.parse(raw);
+                } catch(e) {
+                    entries = [];
+                }
+            } else {
+                entries = [];
+            }
+        }
+
+        function saveEntries() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            updateStats();
+        }
+
+        // --- VIEW SWITCHING ---
+        function switchView(view) {
+            const userView = document.getElementById('view-user');
+            const adminView = document.getElementById('view-admin');
+            const btnUser = document.getElementById('nav-btn-user');
+            const btnAdmin = document.getElementById('nav-btn-admin');
+
+            if (view === 'user') {
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                
+                // Style nav buttons
+                btnUser.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 bg-white text-ono-700 shadow-sm";
+                btnAdmin.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 text-purple-200 hover:text-white";
+            } else {
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+
+                // Style nav buttons
+                btnAdmin.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 bg-white text-ono-700 shadow-sm";
+                btnUser.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 text-purple-200 hover:text-white";
+
+                renderAdminList();
+            }
+        }
+
+        // --- FORM HANDLING ---
+        function updateFormUI() {
+            // Visual feedback on radios if needed
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const type = document.querySelector('input[name="entry_type"]:checked').value;
+            const subject = document.getElementById('subject').value.trim();
+            const detail = document.getElementById('detail').value.trim();
+            const userName = document.getElementById('user_name').value.trim() || 'Anónimo';
+            const userContact = document.getElementById('user_contact').value.trim() || 'No proporcionado';
+
+            if (!subject || !detail) {
+                showToast('Atención', 'Por favor completa los campos requeridos.', 'warning');
+                return;
+            }
+
+            const newEntry = {
+                id: 'ONO-' + Date.now().toString().slice(-6),
+                type: type, // 'queja' or 'sugerencia'
+                subject: subject,
+                detail: detail,
+                userName: userName,
+                userContact: userContact,
+                timestamp: new Date().toISOString(),
+                status: 'pendiente' // 'pendiente', 'en_proceso', 'resuelto'
+            };
+
+            entries.unshift(newEntry);
+            saveEntries();
+
+            // Reset Form
+            document.getElementById('feedback-form').reset();
+            updateFormUI();
+
+            // Toast feedback
+            showToast(
+                type === 'queja' ? 'Queja registrada' : 'Sugerencia enviada',
+                'Gracias por comunicarte con ONO. Hemos recibido tu mensaje.',
+                'success'
+            );
+        }
+
+        // --- ADMIN LIST RENDER & FILTERS ---
+        function setAdminFilterType(type) {
+            currentAdminFilterType = type;
+
+            const tabAll = document.getElementById('tab-type-all');
+            const tabQueja = document.getElementById('tab-type-queja');
+            const tabSugerencia = document.getElementById('tab-type-sugerencia');
+
+            const activeClass = "flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition bg-white text-slate-800 shadow-sm";
+            const inactiveClass = "flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition text-slate-600 hover:text-ono-700";
+
+            tabAll.className = type === 'all' ? activeClass : inactiveClass;
+            tabQueja.className = type === 'queja' ? activeClass : inactiveClass;
+            tabSugerencia.className = type === 'sugerencia' ? activeClass : inactiveClass;
+
+            renderAdminList();
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('admin-list-container');
+            const statusFilter = document.getElementById('admin-status-filter').value;
+            const searchQuery = document.getElementById('admin-search').value.toLowerCase().trim();
+
+            // Filter logic
+            let filtered = entries.filter(item => {
+                // Type filter
+                if (currentAdminFilterType !== 'all' && item.type !== currentAdminFilterType) return false;
+                // Status filter
+                if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+                // Search query
+                if (searchQuery) {
+                    const matchSubject = item.subject.toLowerCase().includes(searchQuery);
+                    const matchDetail = item.detail.toLowerCase().includes(searchQuery);
+                    const matchUser = item.userName.toLowerCase().includes(searchQuery);
+                    const matchId = item.id.toLowerCase().includes(searchQuery);
+                    return matchSubject || matchDetail || matchUser || matchId;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-12 text-center border border-slate-200">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                            <i class="fa-solid fa-inbox text-2xl"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-700">No se encontraron registros</h3>
+                        <p class="text-xs text-slate-500 mt-1">Intenta cambiar los filtros o los términos de búsqueda.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const isQueja = item.type === 'queja';
+                const dateStr = new Date(item.timestamp).toLocaleString('es-ES', { 
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+
+                // Status Badge styles
+                let statusBadge = '';
+                if (item.status === 'pendiente') {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg font-bold border border-amber-200"><i class="fa-solid fa-clock mr-1"></i> Pendiente</span>`;
+                } else if (item.status === 'en_proceso') {
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-lg font-bold border border-blue-200"><i class="fa-solid fa-spinner fa-spin mr-1"></i> En Proceso</span>`;
+                } else {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-bold border border-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i> Resuelto</span>`;
+                }
+
+                return `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 transition hover:shadow-md">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 pb-3 border-b border-slate-100">
+                            <div class="flex items-center space-x-3">
+                                ${isQueja 
+                                    ? `<span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-exclamation"></i> QUEJA</span>`
+                                    : `<span class="bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-lightbulb"></i> SUGERENCIA</span>`
+                                }
+                                <span class="text-xs font-mono text-slate-400 font-semibold">${item.id}</span>
+                                <span class="text-xs text-slate-400">• ${dateStr}</span>
+                            </div>
+                            <div>
+                                ${statusBadge}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="text-base font-bold text-slate-800 mb-1">${escapeHtml(item.subject)}</h3>
+                            <p class="text-sm text-slate-600 whitespace-pre-line leading-relaxed">${escapeHtml(item.detail)}</p>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <!-- User info -->
+                            <div class="flex items-center space-x-4 text-xs text-slate-600">
+                                <div>
+                                    <i class="fa-solid fa-user text-slate-400 mr-1"></i>
+                                    <span class="font-medium">${escapeHtml(item.userName)}</span>
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-envelope text-slate-400 mr-1"></i>
+                                    <span>${escapeHtml(item.userContact)}</span>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center space-x-2">
+                                <label class="text-xs font-medium text-slate-500 mr-1">Estado:</label>
+                                <select onchange="updateItemStatus('${item.id}', this.value)" 
+                                    class="bg-white border border-slate-300 text-xs rounded-lg px-2 py-1 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-ono-600">
+                                    <option value="pendiente" ${item.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                    <option value="en_proceso" ${item.status === 'en_proceso' ? 'selected' : ''}>En Proceso</option>
+                                    <option value="resuelto" ${item.status === 'resuelto' ? 'selected' : ''}>Resuelto</option>
+                                </select>
+                                <button onclick="deleteItem('${item.id}')" title="Eliminar entrada" 
+                                    class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                    <i class="fa-solid fa-trash-can text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateItemStatus(id, newStatus) {
+            const item = entries.find(e => e.id === id);
+            if (item) {
+                item.status = newStatus;
+                saveEntries();
+                renderAdminList();
+                showToast('Estado actualizado', `La entrada ${id} ahora está en estado '${newStatus.replace('_', ' ')}'.`, 'info');
+            }
+        }
+
+        function deleteItem(id) {
+            entries = entries.filter(e => e.id !== id);
+            saveEntries();
+            renderAdminList();
+            showToast('Eliminado', 'La entrada ha sido eliminada permanentemente.', 'info');
+        }
+
+        function updateStats() {
+            const quejas = entries.filter(e => e.type === 'queja').length;
+            const sugerencias = entries.filter(e => e.type === 'sugerencia').length;
+            const total = entries.length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-quejas').innerText = quejas;
+            document.getElementById('stat-sugerencias').innerText = sugerencias;
+            document.getElementById('badge-total-count').innerText = total;
+        }
+
+        // --- SEED DEMO DATA ---
+        function seedDemoData() {
+            const demoEntries = [
+                {
+                    id: 'ONO-883912',
+                    type: 'queja',
+                    subject: 'Demora en la velocidad del servicio contratado',
+                    detail: 'Llevo 3 días experimentando lentitud severa por las noches. Mi velocidad baja a menos del 20% de lo contratado.',
+                    userName: 'Carlos Mendoza',
+                    userContact: 'carlos.mendoza@email.com',
+                    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+                    status: 'pendiente'
+                },
+                {
+                    id: 'ONO-771204',
+                    type: 'sugerencia',
+                    subject: 'Opción de pago rápido en la aplicación móvil',
+                    detail: 'Sería fantástico agregar soporte para pagos con Yape/Plin directamente desde la App de ONO sin redirigir a la web.',
+                    userName: 'Lucía Fernández',
+                    userContact: '987654321',
+                    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+                    status: 'en_proceso'
+                },
+                {
+                    id: 'ONO-551920',
+                    type: 'queja',
+                    subject: 'Atención al cliente en sucursal central',
+                    detail: 'Fui a realizar un trámite presencial y la cola tardó más de una hora debido a que solo había una ventanilla activa.',
+                    userName: 'Anónimo',
+                    userContact: 'No proporcionado',
+                    timestamp: new Date(Date.now() - 3600000 * 48).toISOString(),
+                    status: 'resuelto'
+                },
+                {
+                    id: 'ONO-441029',
+                    type: 'sugerencia',
+                    subject: 'Modo Oscuro en la plataforma web',
+                    detail: 'Me gustaría que implementen un tema oscuro para descansar la vista al consultar las facturas en la noche.',
+                    userName: 'Renato Ruiz',
+                    userContact: 'renato.r@gmail.com',
+                    timestamp: new Date(Date.now() - 3600000 * 72).toISOString(),
+                    status: 'pendiente'
+                }
+            ];
+
+            entries = [...demoEntries, ...entries];
+            saveEntries();
+            renderAdminList();
+            showToast('Datos Demo Cargados', 'Se han agregado entradas de prueba al panel.', 'success');
+        }
+
+        function clearAllData() {
+            entries = [];
+            saveEntries();
+            renderAdminList();
+            showToast('Base de datos limpia', 'Se han eliminado todas las entradas.', 'info');
+        }
+
+        // --- UTILS ---
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastTitle.innerText = title;
+            toastMessage.innerText = message;
+
+            if (type === 'success') {
+                toastIcon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i>`;
+            } else if (type === 'warning') {
+                toastIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>`;
+            } else {
+                toastIcon.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400"></i>`;
+            }
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
